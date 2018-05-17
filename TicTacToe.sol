@@ -12,7 +12,7 @@ contract TicTacToe {
     uint256 _turnDeadLine;
 
     function TicTacToe (address opponent, uint32 turnLength, bytes32 p1Commitment)
-    public {
+    public payable {
         _playerAddress[0] = msg.sender;
         _playerAddress[1] = opponent;
         _turnLength = turnLength;
@@ -31,14 +31,19 @@ contract TicTacToe {
         return address(this).balance;
     }
     function checkBalanceUser(uint8 u) view public returns (uint256) {
-        return _playerAddress[u].balance;
+        return address(_playerAddress[u]).balance;
+    }
+    function checkGameOver() view public returns (bool) {
+        return false;
+    }
+    function checkTurn() view public returns (uint256) {
+        return _turnLength - (_turnDeadLine - block.number);
     }
     function joinGame(uint8 p2Nounce)
-    public payable returns (bool success) {
+    public payable {
         require(msg.sender == _playerAddress[1]);
-        require(msg.value >= address(this).balance);
+        require(address(this).balance > msg.value);
         _p2Nounce = p2Nounce;
-        return true;
     }
     function startGame(uint8 p1Nounce)
     public {
@@ -52,6 +57,13 @@ contract TicTacToe {
         require(squareToPlay >= 0 && squareToPlay <= 8);
         _board[squareToPlay] = _currentPlayer + 1;
         _currentPlayer ^= 0x1;
+        if(checkGameOver()) {
+            selfdestruct(msg.sender);
+        }
         return _currentPlayer;
+    }
+    function defaultGame()
+    public payable {
+        selfdestruct(msg.sender);
     }
 }
